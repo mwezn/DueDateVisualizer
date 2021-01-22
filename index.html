@@ -133,9 +133,11 @@ var svg = d3.select("#my_dataviz2")
    svg2.append("text")             
       .attr("transform", "translate("+(width/2)+", " + (height -10) + ")")
       .style("text-anchor", "middle")
+      .style("font-size","25px")
       .text("Day of pregnancy");
   svg2.append("text")
       .style("text-anchor","middle")
+      .style("font-size","25px")
       .attr("transform","translate("+15+", " + (height)/2 + ")"+"rotate(-90)")
       .text("Number of people");
   
