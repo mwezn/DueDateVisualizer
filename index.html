@@ -12,7 +12,7 @@
     #my_dataviz3 {
       position: relative;
       left: 500px;
-      bottom: 200px;
+      bottom: 500px;
       
     }
     #exp{
@@ -51,7 +51,7 @@
        oninput="Now1()"
        min="2020-01-01" max="2021-12-31">
 </div>
-<div id="scroll"><h1>Move your mouse over the graph below to get probability of any specific day. (Move your finger if using a mobile device) </h1></div>
+<div id="scroll"><h1>Move your mouse over the left graph below to get probability of any specific day. (Move your finger if using a mobile device) </h1></div>
 
 <div id="my_dataviz2"></div>
 <div id="my_dataviz3"></div>
@@ -351,7 +351,7 @@ let probs=completeLog();
        focus.style("opacity",0)
        focusTxt.style("opacity",0)
        //h1.style("opacity",0)
-       h1.text("Move your mouse over the graph below to get probability of any specific day. (Move your finger if using a mobile device)")
+       h1.text("Move your mouse over the left graph below to get probability of any specific day. (Move your finger if using a mobile device)")
      })
      .on("touchstart",function(){
        a.style("opacity",1)
