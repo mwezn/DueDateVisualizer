@@ -381,7 +381,34 @@ let probs=completeLog();
        //h1.style("opacity",0)
        h1.text("Move your mouse over the graph below to get probability of any specific day. (Scroll your finger if using a mobile device) ")
      })
-     svg2
+      svg2
+        .append("path")
+        .datum(SortedData)
+        .attr("fill", "none")
+        .attr("stroke", "steelblue")
+        .attr("stroke-width", 1.5)
+        .attr("d", d3.line()
+          .x(function(d) { return x2(d[0]) })
+          .y(function(d) { return y2(d[1]) })
+          )  
+   
+  var focus2 = svg2
+    .append('g')
+    .append('circle')
+      .style("fill", "none")
+      .attr("stroke", "black")
+      .attr('r', 8.5)
+      .style("opacity", 0)
+   var focusTxt2 = svg2
+    .append('g')
+    .append('text')
+      .style('opacity',0)
+      .attr("text-anchor", "left")
+      .attr("alignment-baseline", "middle")
+    
+       
+      
+   svg2
      .on("mouseover",function(){
        focus2.style("opacity",1)
        focusTxt2.style("opacity",1)
