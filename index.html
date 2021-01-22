@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<head>
+  <style>
+    .line {
+      fill: none;
+      stroke: rgb(12, 138, 211);
+      stroke-width: 2px;
+    }
+   .container {
+     height: 90vh;
+     margin: 2rem;
+     display: grid;
+     grid-template-columns: 1fr 1fr ;
+     grid-template-rows: 1fr 1fr ;
+   }
+   #my_dataviz2 {
+     position: relative;
+     bottom: 50px;
+     
+   }
+
+   .area {
+     fill: lightsteelblue;
+     stroke-width: 0;
+  }
+  #scroll {
+    border: 2px black solid;
+    font-size: 10px;
+  }
+
+    </style>
+<meta charset="utf-8">
+</head>
+<script src="https://d3js.org/d3.v4.js"></script>
+<div id="my_dataviz">
+  <label for="start">Enter your due date:</label>
+  <input type="date" id="start" value="" name="trip-start"
+       oninput="Now1()"
+       min="2020-01-01" max="2021-12-31">
+</div>
+<div id="scroll"><h1>Move your mouse over the graph below to get probability of any specific day. (Move your finger if using a mobile device) </h1></div>
+
+<div id="my_dataviz2"></div>
+<div id="exp">Here the continous lognormal distribution function was computed to generalise the discrete data taken
+from a survey of women on this site <a href="https://spacefem.com/pregnant/charts/sf_gestationdata.csv">spacefem.com</a>
+</div>
+
+<script>
+var width=500;
+var height=500;
+var padding=70;
+
+TF=document.getElementById('start');
+TF.valueAsDate = new Date();
+
+
+  
+
+function convertTimestamp(unix_timestamp){
+    var t= new Date(unix_timestamp*1000);
+    return t.toLocaleDateString();
+}
+
+function timeScaleDiff(timest){
+  var s=new Date(timest)/(24*60*60*1000)
+  return Math.round(s);
+}
+
+function dailyDiff(unix_timestamp){
+    var s= new Date(unix_timestamp*1000)/(24*60*60*1000);
+    return Math.round(s);
+}
+
+
+function countElements(i){
+  var count=mydata.reduce((total,x)=>(x==i? total+1:total),0)
+  return count
+}
+
+function LogNormal(x,mu,sigma){
+    var mean=mu;
+    var std=sigma;
+    var f=Math.E**(-1*(Math.log(x)-mean)**2/(2*sigma**2))/(x*std*Math.sqrt(2*Math.PI))
+    return f
+}
+
+function sumarray(arr,j){
+    var before=0
+    arr.forEach((d,i)=>{
+      if(i<=j){
+        before+=d[1]
+      }
+    })
+    return before
+}
+
+
+var svg = d3.select("#my_dataviz2")
+    .append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    
+  svg.append("text")             
+      .attr("transform", "translate("+(width/2)+", " + (height -10) + ")")
+      .style("text-anchor", "middle")
+      .style("font-size","25px")
+      .text("Day of pregnancy");
+  svg.append("text")             
+      .attr("transform", "translate("+20+", " + (height/2) + ")"+"rotate(-90)")
+      .style("text-anchor", "middle")
+      .style("font-size","25px")
+      .text("Percentage chance");
+  
+
+function Now1(){ 
+
+  d3.select("svg").remove();
+  var svg = d3.select("#my_dataviz2")
+    .append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    
+  svg.append("text")             
+      .attr("transform", "translate("+(width/2)+", " + (height -10) + ")")
+      .style("text-anchor", "middle")
+      .style("font-size","25px")
+      .text("Day of pregnancy");
+  svg.append("text")             
+      .attr("transform", "translate("+20+", " + (height/2) + ")"+"rotate(-90)")
+      .style("text-anchor", "middle")
+      .style("font-size","25px")
+      .text("Percentage chance");
+  
+  
+  let now= new Date();
+  let then=new Date(TF.value);
+  console.log(then);
+  let dailydif= timeScaleDiff(then.getTime()-now.getTime())
+  d3.csv("sf_gestationdata.csv", function(data){
+  mydata=[]
+  data.forEach(function(d,i){
+    let DayNum=dailyDiff(d.birthdate-d.duedate)+280;
+
+    
+  if (i<20000){ //with this & the following conditions ive obtained 9408 datapoints
+    if(d.birthdate == "NULL"|| d.duedate== "NULL"){ 
+      i++; // skip the current survey point in data & move to the next
+    }
+    else if(DayNum > 308 || DayNum <240){
+      i++;
+    }   
+    //Theres a column in the data for whether birth was medically induced
+    //or whether it was spontaneous) 1=induced, 0= spontaneous
+    //The following line filters out only natural births
+    else if(d.induced==0){
+      const due=`The baby was due ${convertTimestamp(d.duedate)}`
+      const lmp=`The LMP was ${convertTimestamp(d.lmpdate)}`
+      const born=`The baby was actually born on day ${dailyDiff(d.birthdate-d.duedate)+280}. Date: ${convertTimestamp(d.birthdate)}`
+      mydata.push(dailyDiff(d.birthdate-d.duedate)+280)
+    }
+  }
+  return mydata
+
+  })
+
+
+
+//These lines are needed to correctly calculate the parameters for a LogNormal distribution
+  var M=mydata.map((x)=> Math.log(x))
+  var mean=d3.mean(M)
+  var std=d3.deviation(M)
+  
+ 
+
+function dueDateCalc(then){
+  then= then || 0
+  let now= 280-then;
+  let Ln=[]
+  for (let i=now;i<=308;i++){ 
+    Ln.push([i,LogNormal(i,mean,std)])
+  }
+  return Ln
+}
+
+const completeLog= ()=>{
+  var l=[]
+  for (let i=240;i<=308;i++){
+    l.push([i,LogNormal(i,mean,std)])
+  }
+  return l
+}
+
+var Ln=dueDateCalc(dailydif);
+let probs=completeLog();
+
+  
+  const mindate= new Date()
+  
+  const maxdate= new Date(mindate.getTime()+(28+dailydif+1)*1000*60*60*24); //this gives us 28 days from now
+  const Xscale=d3.scaleTime() 
+      .domain([mindate,maxdate]) 
+      .range([0+padding,width-padding]);
+  const Yscale=d3.scaleLinear()
+      .domain([0,d3.max(Ln,(d)=>d[1])])
+      .range([height-padding,0+padding]);
+  
+
+  var x = d3.scaleLinear()
+        .domain([d3.min(Ln,(d)=> d[0]),d3.max(Ln,(d)=>d[0])])
+        .range([ 0+padding, width-padding ]);
+  var y = d3.scaleLinear()
+        .domain([0,d3.max(Ln,(d)=>d[1])])
+        .range([height-padding,0+padding]);
+    
+      
+      var bisect = d3.bisector(function(d) { return d[0]; }).left;
+    
+      // Create the circle that travels along the curve of chart
+      var focus = svg
+        .append('g')
+        .append('circle')
+          .style("fill", "none")
+          .attr("stroke", "black")
+          .attr('r', 8.5)
+          .style("opacity", 0)
+      var l=svg
+        .append('g')
+        .append('line')
+          .style("stroke","green")
+          .style("opacity",0)
+      // Add the line for the curve of LN
+      svg
+        .append("path")
+        .datum(Ln)
+        .attr("fill", "none")
+        .attr("stroke", "steelblue")
+        .attr("stroke-width", 1.5)
+        .attr("d", d3.line()
+          .x(function(d) { return x(d[0]) })
+          .y(function(d) { return y(d[1]) })
+          )
+  var focusTxt = svg
+    .append('g')
+    .append('text')
+      .style('opacity',0)
+      .attr("text-anchor", "left")
+      .attr("alignment-baseline", "middle")
+  var area = d3.area()
+                
+        .x( function(d) { return x(d[0])} )
+        .y( function(d) { return y(0) } )
+        .y1(  function(d) { return y(d[1]) } );
+  var a= svg.append('path')
+      .attr('stroke', 'black')
+      .attr('fill', '#69b3a2'); //#69b3a2
+
+//The following lines of code are event Listeners for 
+//laptop devices & mobile devices too
+    svg
+     .on("mouseover",function(){
+       a.style("opacity",1)
+       focus.style("opacity",1)
+       focusTxt.style("opacity",1)
+       h1.style("opacity",1)
+       l.style("opacity",1)
+     })
+     .on("mousemove",function(){
+       var x0 = x.invert(d3.mouse(this)[0])  
+       var i=bisect(Ln,x0,1)
+       var currentData=Ln.slice(0,i)
+       var CP=`The probability of a spontaneous birth on or before day ${Ln[i][0]}: ${(sumarray(probs,i+40-dailydif)*100).toFixed(3)}\n% Prob exactly on day ${Ln[i][0]}= ${(Ln[i][1]*100).toFixed(3)}%`
+       h1.text(CP);
+       h1.style("font-family",'arial')
+       l.attr("x1",x(Ln[i][0]))
+       l.attr("y1",y(Ln[i][1]))
+       l.attr("x2",x(Ln[i][0]))
+       l.attr("y2",y(0))
+       focus.attr("cx",x(Ln[i][0]))
+       focus.attr("cy",y(Ln[i][1]))
+       focusTxt.html("x:" + Ln[i][0] + "  -  " + "y:" + Ln[i][1])
+       
+       focusTxt.attr('x',x(Ln[i][0])+10)
+       focusTxt.attr('y',y(Ln[i][1]))
+       a.attr("d", area(currentData))
+     })
+     .on("mouseleave",function(){
+       a.style("opacity",0)
+       focus.style("opacity",0)
+       focusTxt.style("opacity",0)
+       //h1.style("opacity",0)
+       h1.text("Move your mouse over the graph below to get probability of any specific day. (Move your finger if using a mobile device)")
+     })
+     .on("touchstart",function(){
+       a.style("opacity",1)
+       focus.style("opacity",1)
+       focusTxt.style("opacity",1)
+       h1.style("opacity",1)
+       l.style("opacity",1)
+     })
+     .on("touchmove",function(){
+       var x0 = x.invert(d3.mouse(this)[0])  
+       var i=bisect(Ln,x0,1)
+       var currentData=Ln.slice(0,i)
+       var CP=`The probability of a spontaneous birth on or before day ${Ln[i][0]} is ${(sumarray(probs,i+40-dailydif)*100).toFixed(3)}% Prob exactly on day ${Ln[i][0]}= ${(Ln[i][1]*100).toFixed(3)}%`
+       console.log(CP)
+       h1.text(CP);
+       h1.style("font-family",'arial')
+       l.attr("x1",x(Ln[i][0]))
+       l.attr("y1",y(Ln[i][1]))
+       l.attr("x2",x(Ln[i][0]))
+       l.attr("y2",y(0))
+       focus.attr("cx",x(Ln[i][0]))
+       focus.attr("cy",y(Ln[i][1]))
+       focusTxt.html("x:" + Ln[i][0] + "  -  " + "y:" + Ln[i][1])
+       
+       focusTxt.attr('x',x(Ln[i][0])+10)
+       focusTxt.attr('y',y(Ln[i][1]))
+       a.attr("d", area(currentData))
+     })
+
+      // Create a rect on top of the svg area: this rectangle recovers mouse position
+      var h1 = d3.select('h1');
+      
+
+   const xaxis=d3.axisBottom(Xscale);
+   const yaxis=d3.axisLeft(Yscale); 
+   svg.append("g")
+     .attr("class","xa")
+     .attr("transform", "translate(0, " + (height - padding) + ")")
+     .call(xaxis);
+   svg.append("g")
+     .attr("transform", `translate(${padding}, ` + 0 + ")")
+     .call(yaxis);
+   // now rotate text on x axis
+   // solution based on idea here: https://groups.google.com/forum/?fromgroups#!topic/d3-js/heOBPQF3sAY
+   // first move the text left so no longer centered on the tick
+   // then rotate up to get 45 degrees.
+    svg.selectAll(".xa text")  // select all the text elements for the xaxis
+          .attr("transform", function(d) {
+              return "translate(" + this.getBBox().height*-2 + "," + this.getBBox().height + ")rotate(-45)";
+        });
+   
+});
+
+  
+
+}
+
+Now1();
+
+
+
+   
+</script>
