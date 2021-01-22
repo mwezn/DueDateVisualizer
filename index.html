@@ -48,6 +48,7 @@
 <div id="scroll"><h1>Move your mouse over the graph below to get probability of any specific day. (Move your finger if using a mobile device) </h1></div>
 
 <div id="my_dataviz2"></div>
+<div id="my_dataviz3"></div>
 <div id="exp">Here the continous lognormal distribution function was computed to generalise the discrete data taken
 from a survey of women on <a href="https://spacefem.com/pregnant/charts/duedate0.php">spacefem.com</a>. <br>
 Click <a href="https://spacefem.com/pregnant/charts/sf_gestationdata.csv">here</a> to download the CSV file. <br>
@@ -139,6 +140,18 @@ function Now1(){
       .style("text-anchor", "middle")
       .style("font-size","25px")
       .text("Percentage chance");
+  var svg2 = d3.select("#my_dataviz3")
+    .append("svg")
+    .attr("width", width)
+    .attr("height", height)
+   svg2.append("text")             
+      .attr("transform", "translate("+(width/2)+", " + (height -10) + ")")
+      .style("text-anchor", "middle")
+      .text("Day of pregnancy");
+   svg2.append("text")
+      .style("text-anchor","middle")
+      .attr("transform","translate("+15+", " + (height)/2 + ")"+"rotate(-90)")
+      .text("Number of people");
   
   
   let now= new Date();
@@ -171,6 +184,28 @@ function Now1(){
   return mydata
 
   })
+    mydata.sort(function(a, b){return a - b}); 
+  //usually Javascripts inbuilt sort function sorts arrays alphabetically however
+  // Since were dealing with numbers & not strings! 
+  // we need a compare function to sort it in this case by ascending order
+
+  
+  var SortedData=[]
+  
+
+  //wrote the following myself to clean & count the number of unique data points
+  for (var i=0;i<mydata.length;i++){
+    if (mydata[i]==mydata[i-1]){
+      continue;
+    }
+    else{
+      var count=mydata.reduce((total,x)=>(x==mydata[i]?total+1:total),0)
+      SortedData.push([mydata[i],count])
+    }
+  }
+  //BUT we could do the above using Set & ES6 spread operator!!
+  let sorted= new Set(mydata)
+  let result = [...sorted]
 
 
 
@@ -219,6 +254,19 @@ let probs=completeLog();
         .range([ 0+padding, width-padding ]);
   var y = d3.scaleLinear()
         .domain([0,d3.max(Ln,(d)=>d[1])])
+        .range([height-padding,0+padding]);
+  const Xscale2=d3.scaleLinear() 
+      .domain([d3.min(SortedData,(d)=>d[0]),d3.max(SortedData,(d)=>d[0])])
+      .range([0+padding,width-padding]);
+  const Yscale2=d3.scaleLinear()
+      .domain([0,d3.max(SortedData,(d)=>d[1])])
+      .range([height-padding,0+padding]);
+
+  var x2 = d3.scaleLinear()
+        .domain([d3.min(SortedData,(d)=> d[0]),d3.max(SortedData,(d)=>d[0])])
+        .range([ 0+padding, width-padding ]);
+  var y2 = d3.scaleLinear()
+        .domain([0,d3.max(SortedData,(d)=>d[1])])
         .range([height-padding,0+padding]);
     
       
@@ -333,6 +381,26 @@ let probs=completeLog();
        //h1.style("opacity",0)
        h1.text("Move your mouse over the graph below to get probability of any specific day. (Scroll your finger if using a mobile device) ")
      })
+     svg2
+     .on("mouseover",function(){
+       focus2.style("opacity",1)
+       focusTxt2.style("opacity",1)
+     })
+     .on("mousemove",function(){
+       var x0 = x.invert(d3.mouse(this)[0])  //Important!
+       var i=bisect(SortedData,x0,1)
+       console.log(x0,i,SortedData[i])
+       focus2.attr("cx",x2(SortedData[i][0]))
+       focus2.attr("cy",y2(SortedData[i][1]))
+       focusTxt2.html("x:" + SortedData[i][0] + "  -  " + "y:" + SortedData[i][1])
+       
+       focusTxt2.attr('x',x2(SortedData[i][0])+10)
+       focusTxt2.attr('y',y2(SortedData[i][1]))
+     })
+     .on("mouseleave",function(){
+       focus2.style("opacity",0)
+       focusTxt2.style("opacity",0)
+     })
 
       // Create a rect on top of the svg area: this rectangle recovers mouse position
       var h1 = d3.select('h1');
@@ -355,6 +423,15 @@ let probs=completeLog();
           .attr("transform", function(d) {
               return "translate(" + this.getBBox().height*-2 + "," + this.getBBox().height + ")rotate(-45)";
         });
+   const xaxis2=d3.axisBottom(Xscale2);
+   const yaxis2=d3.axisLeft(Yscale2); 
+   svg2.append("g")
+     .attr("transform", "translate(0, " + (height - padding) + ")")
+     .call(xaxis2);
+   svg2.append("g")
+     .attr("transform", `translate(${padding}, ` + 0 + ")")
+     .call(yaxis2);
+   
    
 });
 
