@@ -321,6 +321,13 @@ let probs=completeLog();
        focusTxt.attr('y',y(Ln[i][1]))
        a.attr("d", area(currentData))
      })
+     .on("touchend",function(){
+       a.style("opacity",0)
+       focus.style("opacity",0)
+       focusTxt.style("opacity",0)
+       //h1.style("opacity",0)
+       h1.text("Move your mouse over the graph below to get probability of any specific day. (Scroll your finger if using a mobile device) ")
+     })
 
       // Create a rect on top of the svg area: this rectangle recovers mouse position
       var h1 = d3.select('h1');
