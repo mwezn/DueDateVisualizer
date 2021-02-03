@@ -72,7 +72,7 @@
 </div>
 <div id="scroll"><h1>Move your mouse over the left graph below to get probability of any specific day. (Move your finger if using a mobile device) </h1></div>
 
-<div id="my_dataviz2"><h2>Continuous function(Infinite data points)</h2></div>
+<div id="my_dataviz2"><h2>Continuous function(Infinite data points)</h2><p> The red line represents day 280 (which doctors refer to as the due date</p></div>
 <div id="my_dataviz3"><h2>Discrete Data(Finite data points)</h2></div>
 <div id="exp">This was my first project for a client on Upwork.com. It uses the data visualisation library D3.js & uses a CSV file based on an outdated survey of 100s of pregnant women at several hospitals. 
  Its purpose is to calculate the probability of women given birth naturally on their expected due date based only on the CSV file thats included.
@@ -205,9 +205,6 @@ function Now1(){
     //or whether it was spontaneous) 1=induced, 0= spontaneous
     //The following line filters out only natural births
     else if(d.induced==0){
-      const due=`The baby was due ${convertTimestamp(d.duedate)}`
-      const lmp=`The LMP was ${convertTimestamp(d.lmpdate)}`
-      const born=`The baby was actually born on day ${dailyDiff(d.birthdate-d.duedate)+280}. Date: ${convertTimestamp(d.birthdate)}`
       mydata.push(dailyDiff(d.birthdate-d.duedate)+280)
     }
   }
@@ -247,8 +244,8 @@ function Now1(){
  
 
 function dueDateCalc(then){
-  then= then || 0
-  let now= 280-then;
+  var t=then==-1?0:then
+  let now= 280-t;
   let Ln=[]
   for (let i=now;i<=308;i++){ 
     Ln.push([i,LogNormal(i,mean,std)])
@@ -298,9 +295,12 @@ let probs=completeLog();
   var y2 = d3.scaleLinear()
         .domain([0,d3.max(SortedData,(d)=>d[1])])
         .range([height-padding,0+padding]);
+  var x3=d3.scaleLinear()
+        .domain([d3.min(Ln,(d)=> d[0]),d3.max(Ln,(d)=>d[0])])
+        .range([mindate,maxdate])
     
       
-      var bisect = d3.bisector(function(d) { return d[0]; }).left;
+   var bisect = d3.bisector(function(d) { return d[0]; }).left;
     
       // Create the circle that travels along the curve of chart
       var focus = svg
@@ -355,7 +355,7 @@ let probs=completeLog();
        var x0 = x.invert(d3.mouse(this)[0])  
        var i=bisect(Ln,x0,1)
        var currentData=Ln.slice(0,i)
-       var CP=`The probability of a spontaneous birth on or before day ${Ln[i][0]}: ${(sumarray(probs,i+40-dailydif)*100).toFixed(3)}\n% Prob exactly on day ${Ln[i][0]}= ${(Ln[i][1]*100).toFixed(3)}%`
+       var CP=`The probability of a spontaneous birth on or before day ${x3(Ln[i][0]).toString().slice(0,15)}: ${(sumarray(probs,i+40-dailydif)*100).toFixed(3)}\n% Prob exactly on day ${Ln[i][0]}= ${(Ln[i][1]*100).toFixed(3)}%`
        h1.text(CP);
        h1.style("font-family",'arial')
        l.attr("x1",x(Ln[i][0]))
