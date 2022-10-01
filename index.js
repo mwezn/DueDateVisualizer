@@ -48,10 +48,12 @@ function sumarray(arr,j){
 }
 
 
-var svg = d3.select("#my_dataviz2")
+
+  const svg = d3
+    .select("#my_dataviz2")
     .append("svg")
-    .attr("width", width)
-    .attr("height", height)
+    .attr("preserveAspectRatio", "xMinYMin meet")
+    .attr("viewBox", `0 0 ${1.2*width} ${1.2*height}`)
     
   svg.append("text")             
       .attr("transform", "translate("+(width/2)+", " + (height -10) + ")")
@@ -63,10 +65,11 @@ var svg = d3.select("#my_dataviz2")
       .style("text-anchor", "middle")
       .style("font-size","25px")
       .text("Percentage chance");
-  var svg2 = d3.select("#my_dataviz3")
-    .append("svg")
-    .attr("width", width)
-    .attr("height", height)
+  const svg2 = d3
+      .select("#my_dataviz3")
+      .append("svg")
+      .attr("preserveAspectRatio", "xMinYMin meet")
+      .attr("viewBox", `0 0 ${1.2*width} ${1.2*height}`)
    svg2.append("text")             
       .attr("transform", "translate("+(width/2)+", " + (height -10) + ")")
       .style("text-anchor", "middle")
@@ -75,17 +78,18 @@ var svg = d3.select("#my_dataviz2")
   svg2.append("text")
       .style("text-anchor","middle")
       .style("font-size","25px")
-      .attr("transform","translate("+15+", " + (height)/2 + ")"+"rotate(-90)")
+      .attr("transform","translate("+20+", " + (height)/2 + ")"+"rotate(-90)")
       .text("Number of people");
   
 
 function Now1(){ 
 
   d3.select("svg").remove();
-  var svg = d3.select("#my_dataviz2")
+  const svg = d3
+    .select("#my_dataviz2")
     .append("svg")
-    .attr("width", width)
-    .attr("height", height)
+    .attr("preserveAspectRatio", "xMinYMin meet")
+    .attr("viewBox", `0 0 ${1.2*width} ${1.2*height}`)
     
   svg.append("text")             
       .attr("transform", "translate("+(width/2)+", " + (height -10) + ")")
